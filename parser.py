@@ -16,7 +16,7 @@ def parse_arguments():
     parser.add_argument("--resume_model", type=str, default=None,
                         help="path to model to resume, e.g. logs/.../best_model.pth")
     # Other parameters
-    parser.add_argument("--device", type=str, default="cpu",
+    parser.add_argument("--device", type=str, default="cuda",
                         choices=["cuda", "cpu"], help="_")
     parser.add_argument("--frequency", type=int, default=10, help="_")
     parser.add_argument("--train_split", type=int, default=0.9, help="_")
