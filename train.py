@@ -12,11 +12,12 @@ import dataset
 from model import LSTMAD
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
-print(f"{X_train.shape=}   prima di entrare nel modello")
+
 args = parser.parse_arguments()   
 logging.info(f"Arguments: {args}")      
 
 X_train = dataset.read_folder_normal(args.dataset_folder, args.frequency)
+print(f"{X_train.shape=}   prima di entrare nel modello")
 X_train, pipeline = dataset.preprocess_data(X_train)
 Dataloader_train, DataLoader_val = dataset.split_data(X_train, args.train_split)
  
