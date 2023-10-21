@@ -28,10 +28,11 @@ if args.device == 'cuda':
     model = model.to('cuda')
 
 criterion = nn.MSELoss()
-model.train()
+
 
 for epoch in range(args.epochs_num):
     epoch_losses = np.zeros((0, 1), dtype=np.float32)
+    model.train()
     for x, y in tqdm(Dataloader_train):
         if args.device == 'cuda':
             x, y = x.cuda(), y.cuda()
