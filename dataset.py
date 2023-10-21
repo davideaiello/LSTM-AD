@@ -76,7 +76,7 @@ def preprocess_data(data, pipeline=None, train=True):
         X_train = data
         pipeline = Pipeline([
             ('scaler', preprocessing.MinMaxScaler()),
-            ('selector', VarianceThreshold(threshold=0.1))
+            ('selector', VarianceThreshold(threshold=0.001))
             ])
         # scaler =  preprocessing.MinMaxScaler()
         # X_train_MinMaxScaler = scaler.fit_transform(X_train)
