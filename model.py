@@ -60,18 +60,7 @@ class LSTMAD(nn.Module):
         y_hat = self.forward(x)
         loss = criterion(y_hat, y)
         return loss
-
-    def compute_anoamly_scores(dataloader):
-        errors = []
-        for x, y in dataloader:
-            if args.device == 'cuda':
-                x, y = x.cuda(), y.cuda()
-            y_hat = sef.forward(x)
-            e = torch.abs(y.reshape(*y_hat.shape) - y_hat)
-            errors.append(e)
-        errors = torch.cat(errors)
-        anomaly_scores = model.anomaly_scorer.forward(errors.mean(dim=1))
-        anomaly_scores_norm = (anomaly_scores - np.min(anomaly_scores)) / (np.max(anomaly_scores) - np.min(anomaly_scores))
+    
 
     def save(self, path):
         os.makedirs('models')

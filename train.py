@@ -12,6 +12,7 @@ import dataset
 from model import LSTMAD
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
+print(f"{X_train.shape=}   prima di entrare nel modello")
 args = parser.parse_arguments()   
 logging.info(f"Arguments: {args}")      
 
@@ -21,7 +22,7 @@ Dataloader_train, DataLoader_val = dataset.split_data(X_train, args.train_split)
  
 print(f"{X_train.shape=}   prima di entrare nel modello")
 
-model = LSTMAD(X_train.shape[1], args.lstm_layers, args.window_size, args.prediction_window_size)
+model = LSTMAD(X_train.shape[1], args.lstm_layers, args.window_size, args.prediction_length)
 
 optimizer = Adam(model.parameters(), lr=args.lr)
 

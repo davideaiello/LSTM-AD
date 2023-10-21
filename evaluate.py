@@ -136,7 +136,7 @@ if args.resume == True:
     X_train = dataset.read_folder_normal(args.dataset_folder, args.frequency)
     _, pipeline = dataset.preprocess_data(X_train)
 
-    model = LSTMAD(X_train.shape[1], args.lstm_layers, args.window_size, args.prediction_window_size)
+    model = LSTMAD(X_train.shape[1], args.lstm_layers, args.window_size, args.prediction_length)
     model.load_state_dict(checkpoint["model"])
     anomaly_scorer = checkpoint["anomaly_scorer"]
     model.anomaly_scorer = anomaly_scorer 
