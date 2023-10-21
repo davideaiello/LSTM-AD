@@ -42,17 +42,17 @@ for epoch in range(args.epochs_num):
         optimizer.step()
         epoch_losses = np.append(epoch_losses, loss.item())
 
-        model.eval()
-        valid_losses = []
-        for x, y in tqdm(DataLoader_val):
-            if args.device == 'cuda':
-                x, y = x.cuda(), y.cuda()
-            valid_losses.append(loss.item())
-        validation_loss = sum(valid_losses)
-        logging.info(
-                f"Epoch {epoch+1}: Training Loss : {epoch_losses.mean():.4f} \t "
-                f"Validation Loss {validation_loss / len(DataLoader_val)}"
-            )
+    model.eval()
+    valid_losses = []
+    for x, y in tqdm(DataLoader_val):
+        if args.device == 'cuda':
+            x, y = x.cuda(), y.cuda()
+        valid_losses.append(loss.item())
+    validation_loss = sum(valid_losses)
+    logging.info(
+            f"Epoch {epoch+1}: Training Loss : {epoch_losses.mean():.4f} \t "
+            f"Validation Loss {validation_loss / len(DataLoader_val)}"
+        )
 logging.info("Estimating normal distribution...")
 
 errors = []
