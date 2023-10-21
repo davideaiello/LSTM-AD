@@ -3,9 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import logging
-from tqdm import tqdm
 import dataset
-from model import LSTM_AD
+from model import LSTMAD
 from tqdm import tqdm
 
 args = parser.parse_arguments()   
@@ -136,7 +135,7 @@ if args.resume == True:
     X_train = dataset.read_folder_normal(args.dataset_folder, args.frequency)
     _, pipeline = dataset.preprocess_data(X_train)
 
-    model = LSTM_AD(X_train.shape[1], args.lstm_layers, args.window_size, args.prediction_window_size)
+    model = LSTMAD(X_train.shape[1], args.lstm_layers, args.window_size, args.prediction_window_size)
     model.load_state_dict(checkpoint["model"])
     anomaly_scorer = checkpoint["anomaly_scorer"]
     model.anomaly_scorer = anomaly_scorer 
