@@ -11,7 +11,7 @@ import evaluate
 import dataset
 from model import LSTMAD
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 args = parser.parse_arguments()   
 logging.info(f"Arguments: {args}")      
 

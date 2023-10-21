@@ -6,7 +6,7 @@ def parse_arguments():
     # Training parameters
     parser.add_argument("--lstm_layers", type=int, default=2, help="_")
     parser.add_argument("--window_size", type=int, default=10, help="_")
-    parser.add_argument("--prediction_window_size", type=int, default=5, help="_")
+    parser.add_argument("--prediction_length", type=int, default=5, help="_")
     parser.add_argument("--batch_size", type=int, default=32, help="_")
     parser.add_argument("--epochs_num", type=int, default=3, help="_")
     parser.add_argument("--lr", type=float, default=0.001, help="_")
