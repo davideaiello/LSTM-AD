@@ -133,6 +133,7 @@ def compute_anomaly_scores(model, dataloader):
         e = torch.abs(y.reshape(*y_hat.shape) - y_hat)
         errors.append(e)
     errors = torch.cat(errors)
+    print(errors.shape)
     anomaly_scores = model.anomaly_scorer.forward(errors.mean(dim=1))
     print(anomaly_scores)
     print(anomaly_scores.shape)
