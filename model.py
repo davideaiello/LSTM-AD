@@ -62,7 +62,7 @@ class LSTMAD(nn.Module):
         return loss
     
 
-    def save(self, path):
+    def save(self):
         os.makedirs('models')
         path = "models/model.pth"
         torch.save({

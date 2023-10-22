@@ -26,23 +26,9 @@ def parse_arguments():
                         help="path of the folder with train/val/test sets")
     parser.add_argument("--resume", type=str, default=False,
                         help="resume model for test")
-    parser.add_argument("--model_path", type=str, default=None,
+    parser.add_argument("--model_path", type=str, default="models/model.pth",
                         help="path of the folder of the model to resume")
     
-
-# hyperparameters = {
-#     'lstm_layers': 2,
-#     'split':  0.9,
-#     'window_size':  10,
-#     'prediction_window_size': 5,
-#     'output_dims' : 51,
-#     'batch_size': 32,
-#     'validation_batch_size': 32,
-#     'test_batch_size': 128,
-#     'learning_rate': 1e-3,
-#     'epochs': 1        # bigger for smaller datasets, smaller for bigger datasets
-#     }
-
     args = parser.parse_args()
     
     if args.dataset_folder is None:
