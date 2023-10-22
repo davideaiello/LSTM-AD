@@ -67,7 +67,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         th_f0_1_max = max_index_f0_1 * step
         logging.info(f"{f1_max = } at {th_f1_max = }")
         logging.info(f"{f0_1_max = } at {th_f0_1_max = }")  
-
+        return th_f0_1_max
     else:
         df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= th)]
         tp = 0                                                          # true positive per quella threshold
@@ -96,7 +96,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         f0_1 = (1 + 0.1**2) * tp / ((1 + 0.1**2) * tp +  0.1**2*fp + fn)
         logging.info(f"{f1 = } at {th = } for the test set")
         logging.info(f"{f0_1 = } at {th = } for the test set")
-    return th_f0_1_max
+    
 
 
 def plot_hist(anomaly_scores_norm, df_collision, df):
@@ -109,7 +109,7 @@ def plot_hist(anomaly_scores_norm, df_collision, df):
                 tot_anomalies += 1
                 index_anomaly.append(idx)
         idx += 1
-    logging.info(f"Anomalies detected: {idx}")
+    logging.info(f"Anomalies detected: {tot_anomalies}")
     anomaly_values = anomaly_scores_norm[index_anomaly]
     normal_values = np.delete(anomaly_scores_norm, index_anomaly)
 
