@@ -20,7 +20,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
     anomlay_indexes_dict = dict()
     acc_with_err = list()
     step = 0.1
-    if th is not None:
+    if th is None:
         for threshold in tqdm(np.arange(0, 1, step)):
             df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= threshold)]
             tp = 0                                                          # true positive per quella threshold
@@ -99,17 +99,17 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
     return th_f0_1_max
 
 
-def plot_hist(anomaly_scores_norm, df_collision, df_val):
+def plot_hist(anomaly_scores_norm, df_collision, df):
     tot_anomalies = 0
     index_anomaly = []
     idx = 0
-    for _, row in df_val.iterrows():
+    for _, row in df.iterrows():
         for _, collision_row in df_collision.iterrows():
             if (row['time'] >= collision_row['start']) and (row['time'] <= collision_row['end']):
                 tot_anomalies += 1
                 index_anomaly.append(idx)
         idx += 1
-
+    logging.info(f"Anomalies detected: {idx}")
     anomaly_values = anomaly_scores_norm[index_anomaly]
     normal_values = np.delete(anomaly_scores_norm, index_anomaly)
 
@@ -133,10 +133,7 @@ def compute_anomaly_scores(model, dataloader):
         e = torch.abs(y.reshape(*y_hat.shape) - y_hat)
         errors.append(e)
     errors = torch.cat(errors)
-    print(errors.shape)
     anomaly_scores = model.anomaly_scorer.forward(errors.mean(dim=1))
-    print(anomaly_scores)
-    print(anomaly_scores.shape)
     anomaly_scores_norm = (anomaly_scores - np.min(anomaly_scores)) / (np.max(anomaly_scores) - np.min(anomaly_scores))
     return anomaly_scores_norm
 
@@ -144,7 +141,7 @@ def compute_anomaly_scores(model, dataloader):
 def evaluation(model, pipeline):
     df_collision, X_collisions, df_test = dataset.read_folder_collisions(args.dataset_folder, args.frequency)
     X_collisions = dataset.preprocess_data(X_collisions, pipeline, train=False)
-    Dataloader_collisions, DataLoader_val, df_collision, df_val = dataset.split_data(X_collisions, args.test_split, df_test)
+    Dataloader_collisions, DataLoader_val, df_col, df_val = dataset.split_data(X_collisions, args.test_split, df_test)
     X_collisions = dataset.preprocess_data(X_collisions, pipeline)
     logging.info(f"Computing threshold on a test set subset")   
     model.eval()
@@ -156,9 +153,9 @@ def evaluation(model, pipeline):
     logging.info(f"Computing metrics on test set")  
     
     anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
-    df_val = df_val[-anomaly_scores_norm.shape[0]:] 
-    tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_val)
-    compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies, th)
+    df_col = df_col[-anomaly_scores_norm.shape[0]:] 
+    tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
+    compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
 
     
 if args.resume == True:

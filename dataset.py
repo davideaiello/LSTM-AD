@@ -56,7 +56,7 @@ def read_folder_collisions(dataset_folder, frequency):
     end_col.reset_index(drop=True, inplace=True)
 
     df_collision = pd.concat([start_col, end_col], axis=1)
-
+    
     filepath_csv_test = [os.path.join(ROOTDIR_DATASET_ANOMALY, f"rec{r}_collision_20220811_rbtc_{1/frequency}s.csv") for r in [1, 5]]
     dfs_test = [pd.read_csv(filepath_csv, sep=";") for filepath_csv in filepath_csv_test]
     df_test = pd.concat(dfs_test)
