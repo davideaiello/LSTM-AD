@@ -140,7 +140,7 @@ def compute_anomaly_scores(model, dataloader):
 
 def evaluation(model, pipeline):
     df_collision, X_collisions, df_test = dataset.read_folder_collisions(args.dataset_folder, args.frequency)
-    X_collisions = dataset.preprocess_data(X_collisions, train=False)
+    X_collisions = dataset.preprocess_data(X_collisions, pipeline, train=False)
     Dataloader_collisions, DataLoader_val, df_collision, df_val = dataset.split_data(X_collisions, args.test_split, df_test)
     X_collisions = dataset.preprocess_data(X_collisions, pipeline)
     logging.info(f"Computing threshold on a test set subset")   
@@ -160,7 +160,7 @@ def evaluation(model, pipeline):
     
 if args.resume == True:
     logging.basicConfig(level=logging.INFO, format='%(message)s')
-    logging.info(f"Arguments: {args}")   
+    logging.info(f"Arguments: {vars(args)}")   
     checkpoint = torch.load(args.model_path)
     X_train = dataset.read_folder_normal(args.dataset_folder, args.frequency)
     _, pipeline = dataset.preprocess_data(X_train)
