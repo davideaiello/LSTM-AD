@@ -14,7 +14,7 @@ from model import LSTMAD
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 args = parser.parse_arguments()   
-logging.info(f"Arguments: {args.namespace}")      
+logging.info(f"Arguments: {args.Namespace}")      
 
 X_train = dataset.read_folder_normal(args.dataset_folder, args.frequency)
 X_train, pipeline = dataset.preprocess_data(X_train)
