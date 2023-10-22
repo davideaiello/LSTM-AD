@@ -24,7 +24,7 @@ class AnomalyScorer:
         # print(f"{self.mean=}")
         # print(f"{self.var=}")
         # print(f"{errors=}")
-        return -torch.mul(torch.mul(mean_diff, self.var**-1), mean_diff)
+        return -torch.mul(torch.mul(mean_diff, self.var**-1), mean_diff).detach().cpu().numpy
         # return np.exp(multivariate_normal.logpdf(errors, mean=mean, cov=var, allow_singular=True))
 
     def find_distribution(self, errors: torch.Tensor):
