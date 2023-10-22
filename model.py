@@ -63,7 +63,8 @@ class LSTMAD(nn.Module):
     
 
     def save(self):
-        os.makedirs('models')
+        if not os.path.exists('models'):
+            os.makedirs('models')
         path = "models/model.pth"
         torch.save({
             "model": self.state_dict(),
