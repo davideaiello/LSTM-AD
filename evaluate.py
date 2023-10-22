@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 args = parser.parse_arguments()   
 
-def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies):
+def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, th=None):
     sens = list()           # sembra una lista di recall
     spec = list()
     fpr = list()
@@ -20,8 +20,56 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies):
     anomlay_indexes_dict = dict()
     acc_with_err = list()
     step = 0.1
-    for threshold in tqdm(np.arange(0, 1, step)):
-        df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= threshold)]
+    if th is not None:
+        for threshold in tqdm(np.arange(0, 1, step)):
+            df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= threshold)]
+            tp = 0                                                          # true positive per quella threshold
+            anomaly_indexes = list()
+            for index, row in df_anomaly.iterrows():
+                for _, collision_row in df_collision.iterrows():
+                    if (row['time'] >= collision_row['start']) and (row['time'] <= collision_row['end']):
+                        anomaly_indexes.append(index)
+                        tp += 1
+    
+            cm_anomaly = np.zeros((2,2))
+            n_sample = len(df_test)
+            n_not_collision = n_sample - tot_anomalies
+            n_detected = len(df_anomaly)
+
+            fp = n_detected - tp
+            fn = tot_anomalies - tp
+            tn = n_not_collision - fp
+
+            cm_anomaly[0, 0] = tn
+            cm_anomaly[0, 1] = fp
+            cm_anomaly[1, 0] = fn
+            cm_anomaly[1, 1] = tp
+
+            cm_list.append(cm_anomaly)
+            recall = tp / (tp + fn)
+            sens.append(recall)
+            fpr.append(1 - tn /(tn + fp))
+            precision = tp / (tp + fp)
+            prec.append(precision)
+            spec.append(tn /(tn + fp))
+            f1.append(2 * tp / (2 * tp + fp + fn))
+            f0_1.append((1 + 0.1**2) * tp / ((1 + 0.1**2) * tp +  0.1**2*fp + fn))
+            cm_anomaly_norm = cm_anomaly.astype('float') / cm_anomaly.sum(axis=1)[:, np.newaxis]
+            acc_with_err.append( (np.mean(np.diag(cm_anomaly_norm)), np.std(np.diag(cm_anomaly_norm))) )
+            anomlay_indexes_dict[threshold] = anomaly_indexes
+
+        roc_dict = (fpr, sens)
+        f1_max = max(f1)
+        f0_1_max = max(f0_1)
+        max_index_f1 = f1.index(f1_max)
+        max_index_f0_1 = f0_1.index(f0_1_max)
+        th_f1_max = max_index_f1 * step
+        th_f0_1_max = max_index_f0_1 * step
+        logging.info(f"{f1_max = } at {th_f1_max = }")
+        logging.info(f"{f0_1_max = } at {th_f0_1_max = }")  
+
+    else:
+        df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= th)]
         tp = 0                                                          # true positive per quella threshold
         anomaly_indexes = list()
         for index, row in df_anomaly.iterrows():
@@ -44,29 +92,10 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies):
         cm_anomaly[1, 0] = fn
         cm_anomaly[1, 1] = tp
 
-        print(cm_anomaly)
-        cm_list.append(cm_anomaly)
-        recall = tp / (tp + fn)
-        sens.append(recall)
-        fpr.append(1 - tn /(tn + fp))
-        precision = tp / (tp + fp)
-        prec.append(precision)
-        spec.append(tn /(tn + fp))
-        f1.append(2 * tp / (2 * tp + fp + fn))
-        f0_1.append((1 + 0.1**2) * tp / ((1 + 0.1**2) * tp +  0.1**2*fp + fn))
-        cm_anomaly_norm = cm_anomaly.astype('float') / cm_anomaly.sum(axis=1)[:, np.newaxis]
-        acc_with_err.append( (np.mean(np.diag(cm_anomaly_norm)), np.std(np.diag(cm_anomaly_norm))) )
-        anomlay_indexes_dict[threshold] = anomaly_indexes
-
-    roc_dict = (fpr, sens)
-    f1_max = max(f1)
-    f0_1_max = max(f0_1)
-    max_index_f1 = f1.index(f1_max)
-    max_index_f0_1 = f0_1.index(f0_1_max)
-    th_f1_max = max_index_f1 * step
-    th_f0_1_max = max_index_f0_1 * step
-    logging.info(f"{f1_max = } at {th_f1_max = }")
-    logging.info(f"{f0_1_max = } at {th_f0_1_max = }")
+        f1 = 2 * tp / (2 * tp + fp + fn)
+        f0_1 = (1 + 0.1**2) * tp / ((1 + 0.1**2) * tp +  0.1**2*fp + fn)
+        logging.info(f"{f1 = } at {th = } for the test set")
+        logging.info(f"{f0_1 = } at {th = } for the test set")
     return th_f0_1_max
 
 
@@ -126,7 +155,7 @@ def evaluation(model, pipeline):
     anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
     df_val = df_val[-anomaly_scores_norm.shape[0]:] 
     tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_val)
-    th = compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies)
+    compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies, th)
 
     
 if args.resume == True:
