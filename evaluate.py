@@ -134,6 +134,8 @@ def compute_anomaly_scores(model, dataloader):
         errors.append(e)
     errors = torch.cat(errors)
     anomaly_scores = model.anomaly_scorer.forward(errors.mean(dim=1))
+    print(anomaly_scores)
+    print(anomaly_scores.shape)
     anomaly_scores_norm = (anomaly_scores - np.min(anomaly_scores)) / (np.max(anomaly_scores) - np.min(anomaly_scores))
     return anomaly_scores_norm
 
