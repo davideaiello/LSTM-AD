@@ -164,7 +164,7 @@ if args.resume == True:
     logging.info(f"Arguments: {vars(args)}")   
     checkpoint = torch.load(args.model_path)
     X_train = dataset.read_folder_normal(args.dataset_folder, args.frequency)
-    _, pipeline = dataset.preprocess_data(X_train)
+    X_train, pipeline = dataset.preprocess_data(X_train)
 
     model = LSTMAD(X_train.shape[1], args.lstm_layers, args.window_size, args.prediction_length)
     model.load_state_dict(checkpoint["model"])

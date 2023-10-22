@@ -24,7 +24,7 @@ def parse_arguments():
     # Paths parameters
     parser.add_argument("--dataset_folder", type=str, default=None,
                         help="path of the folder with train/val/test sets")
-    parser.add_argument("--resume", type=bool, default=False,
+    parser.add_argument("--resume",  action='store_true',
                         help="resume model for test")
     parser.add_argument("--model_path", type=str, default="models/model.pth",
                         help="path of the folder of the model to resume")
