@@ -160,6 +160,7 @@ def evaluation(model, pipeline):
     
 if args.resume == True:
     logging.basicConfig(level=logging.INFO, format='%(message)s')
+    logging.info(f"Resuming model....")   
     logging.info(f"Arguments: {vars(args)}")   
     checkpoint = torch.load(args.model_path)
     X_train = dataset.read_folder_normal(args.dataset_folder, args.frequency)
