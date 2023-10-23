@@ -165,7 +165,6 @@ def evaluation(model, pipeline):
     X_collisions = dataset.preprocess_data(X_collisions, pipeline, train=False)
     if args.test_split == True:
         Dataloader_collisions, DataLoader_val, df_col, df_val = dataset.split_data(X_collisions, args.test_split, df_test)
-        X_collisions = dataset.preprocess_data(X_collisions, pipeline)
         logging.info(f"Computing threshold on a test set subset")   
         model.eval()
 
@@ -180,6 +179,7 @@ def evaluation(model, pipeline):
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
         compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
     else:
+        print(X_collisions.shape)
         Dataloader_collisions = DataLoader(X_collisions, batch_size=args.infer_batch_size)
         logging.info(f"Computing metrics on test set")  
         
