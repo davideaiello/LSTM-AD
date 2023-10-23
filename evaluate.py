@@ -123,7 +123,6 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         logging.info(f"{f1 = } at {th = } for the test set")
         logging.info(f"{f0_1 = } at {th = } for the test set")
     
-
 def plot_hist(anomaly_scores_norm, df_collision, df):
     tot_anomalies = 0
     index_anomaly = []
@@ -148,7 +147,6 @@ def plot_hist(anomaly_scores_norm, df_collision, df):
     plt.show()
     return tot_anomalies
 
-
 def compute_anomaly_scores(model, dataloader):
     errors = []
     for x, y in tqdm(dataloader):
@@ -161,7 +159,6 @@ def compute_anomaly_scores(model, dataloader):
     anomaly_scores = model.anomaly_scorer.forward(errors.mean(dim=1))
     anomaly_scores_norm = (anomaly_scores - np.min(anomaly_scores)) / (np.max(anomaly_scores) - np.min(anomaly_scores))
     return anomaly_scores_norm
-
 
 def evaluation(model, pipeline):
     df_collision, X_collisions, df_test = dataset.read_folder_collisions(args.dataset_folder, args.frequency)
@@ -183,7 +180,6 @@ def evaluation(model, pipeline):
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
         compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
     else:
-        X_collisions = dataset.preprocess_data(X_collisions, pipeline)
         Dataloader_collisions = DataLoader(X_collisions, batch_size=args.infer_batch_size)
         logging.info(f"Computing metrics on test set")  
         

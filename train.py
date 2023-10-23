@@ -63,7 +63,6 @@ for x, y in tqdm(DataLoader_val):
     e = torch.abs(y.reshape(*y_hat.shape) - y_hat)
     errors.append(e)
 model.anomaly_scorer.find_distribution(torch.cat(errors))
-print(f"{model.anomaly_scorer.mean=}   dopo aver calcolato la distribuzione")
 model.save()
 
 logging.info("Testing the model...")
