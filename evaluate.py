@@ -184,9 +184,9 @@ def evaluation(model, pipeline):
         logging.info(f"Computing metrics on test set")  
         
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
-        df_col = df_col[-anomaly_scores_norm.shape[0]:] 
-        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
-        fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies)
+        df_test = df_test[-anomaly_scores_norm.shape[0]:] 
+        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_test)
+        fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
         plt.tile("Roc Curve")
         plt.plot(fpr, tpr)
         plt.show()
