@@ -7,6 +7,7 @@ import dataset
 from model import LSTMAD
 from tqdm import tqdm
 from dataset import return_dataloader
+from sklearn.metrics import roc_auc_score
 
 
 args = parser.parse_arguments()   
@@ -20,13 +21,13 @@ def compute_auc_roc(fpr, tpr):
 def compute_auc_pr(sens, prec):
     auc = 0
     for i in range(1, len(sens)):
-        auc += (sens[i] + sens[i-1]) * prec[i]
+        auc += (sens[i] - sens[i-1]) * prec[i]
     return auc
 
 def compute_auc_prrt(sens, prec, ths):
     auc = 0
     for i in range(1, len(sens)):
-        auc += 0.5 * (prec[i] + prec[i-1]) * (sens[i] + sens[i-1]) * (ths[i] + ths[i-1])
+        auc += 0.5 * (prec[i] + prec[i-1]) * (sens[i] - sens[i-1]) * (ths[i] - ths[i-1])
     return auc
 
 def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, th=None):
@@ -136,6 +137,10 @@ def plot_hist(anomaly_scores_norm, df_collision, df):
                 index_anomaly.append(idx)
         idx += 1
     logging.info(f"Anomalies detected: {tot_anomalies}")
+    y_true = np.zeros_like(anomaly_scores_norm)
+    y_true[index_anomaly] = 1
+    auc_roc = roc_auc_score(y_true, anomaly_scores_norm)
+    logging.info(f"AUC-ROC: {auc_roc}")
     anomaly_values = anomaly_scores_norm[index_anomaly]
     normal_values = np.delete(anomaly_scores_norm, index_anomaly)
 
@@ -187,7 +192,7 @@ def evaluation(model, pipeline):
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_test)
         logging.info(f"Computing metrics on test set") 
         fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
-        plt.tile("Roc Curve")
+        plt.title("Roc Curve")
         plt.plot(fpr, tpr)
         plt.show()
     
