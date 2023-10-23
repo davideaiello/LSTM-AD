@@ -125,7 +125,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         logging.info(f"{f0_1 = } at {th = } for the test set")
     
 def plot_hist(anomaly_scores_norm, df_collision, df):
-    logging.info(f"Counting the anomalies...")
+    logging.info(f"Counting the total number of anomalies")
     tot_anomalies = 0
     index_anomaly = []
     idx = 0
