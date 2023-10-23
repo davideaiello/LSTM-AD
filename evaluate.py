@@ -21,7 +21,7 @@ def compute_auc_roc(fpr, tpr):
 def compute_auc_pr(sens, prec):
     auc = 0
     for i in range(1, len(sens)):
-        auc += (sens[i] - sens[i-1]) * prec[i]
+        auc += (sens[i] - sens[i-1]) * (prec[i] + prec[i-1]) 
     return auc
 
 def compute_auc_prrt(sens, prec, ths):
