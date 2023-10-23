@@ -107,7 +107,7 @@ def split_data(ts, split=0.9, df_test=None):
     if df_test is not None:
         df_col = df_test.iloc[:split_at]
         df_val = df_test.iloc[split_at:]
-        return DataLoader(train_ds, batch_size=args.batch_size), DataLoader(valid_ds, batch_size=args.infer_batch_size), df_col, df_val
+        return DataLoader(train_ds, batch_size=args.infer_batch_size), DataLoader(valid_ds, batch_size=args.infer_batch_size), df_col, df_val
     else:
         return DataLoader(train_ds, batch_size=args.batch_size), DataLoader(valid_ds, batch_size=args.infer_batch_size)
 

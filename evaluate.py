@@ -6,10 +6,12 @@ import logging
 import dataset
 from model import LSTMAD
 from tqdm import tqdm
+from torch.utils.data import DataLoader
 
 args = parser.parse_arguments()   
 
 def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, th=None):
+    roc = list()
     sens = list()           # sembra una lista di recall
     spec = list()
     fpr = list()
@@ -57,8 +59,8 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
             cm_anomaly_norm = cm_anomaly.astype('float') / cm_anomaly.sum(axis=1)[:, np.newaxis]
             acc_with_err.append( (np.mean(np.diag(cm_anomaly_norm)), np.std(np.diag(cm_anomaly_norm))) )
             anomlay_indexes_dict[threshold] = anomaly_indexes
-
-        roc_dict = (fpr, sens)
+        
+        roc = (fpr, sens)
         f1_max = max(f1)
         f0_1_max = max(f0_1)
         max_index_f1 = f1.index(f1_max)
@@ -67,7 +69,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         th_f0_1_max = max_index_f0_1 * step
         logging.info(f"{f1_max = } at {th_f1_max = }")
         logging.info(f"{f0_1_max = } at {th_f0_1_max = }")  
-        return th_f0_1_max
+        return roc, th_f0_1_max
     else:
         df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= th)]
         tp = 0                                                          # true positive per quella threshold
@@ -97,7 +99,6 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         logging.info(f"{f1 = } at {th = } for the test set")
         logging.info(f"{f0_1 = } at {th = } for the test set")
     
-
 
 def plot_hist(anomaly_scores_norm, df_collision, df):
     tot_anomalies = 0
@@ -137,26 +138,45 @@ def compute_anomaly_scores(model, dataloader):
     anomaly_scores_norm = (anomaly_scores - np.min(anomaly_scores)) / (np.max(anomaly_scores) - np.min(anomaly_scores))
     return anomaly_scores_norm
 
+def compute_auc_roc(roc):
+    fpr = roc[0]
+    tpr = roc[1]
+    auc = 0
+    for i in range(1, len(fpr)):
+        auc += 0.5 * (tpr[i] + tpr[i-1]) * (fpr[i] - fpr[i-1])
+    return auc
 
 def evaluation(model, pipeline):
     df_collision, X_collisions, df_test = dataset.read_folder_collisions(args.dataset_folder, args.frequency)
     X_collisions = dataset.preprocess_data(X_collisions, pipeline, train=False)
-    Dataloader_collisions, DataLoader_val, df_col, df_val = dataset.split_data(X_collisions, args.test_split, df_test)
-    X_collisions = dataset.preprocess_data(X_collisions, pipeline)
-    logging.info(f"Computing threshold on a test set subset")   
-    model.eval()
+    if args.test_split == True:
+        Dataloader_collisions, DataLoader_val, df_col, df_val = dataset.split_data(X_collisions, args.test_split, df_test)
+        X_collisions = dataset.preprocess_data(X_collisions, pipeline)
+        logging.info(f"Computing threshold on a test set subset")   
+        model.eval()
 
-    anomaly_scores_norm = compute_anomaly_scores(model, DataLoader_val)
-    df_val = df_val[-anomaly_scores_norm.shape[0]:] 
-    tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_val)
-    th = compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies)
-    logging.info(f"Computing metrics on test set")  
-    
-    anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
-    df_col = df_col[-anomaly_scores_norm.shape[0]:] 
-    tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
-    compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
-
+        anomaly_scores_norm = compute_anomaly_scores(model, DataLoader_val)
+        df_val = df_val[-anomaly_scores_norm.shape[0]:] 
+        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_val)
+        th = compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies)
+        logging.info(f"Computing metrics on test set")  
+        
+        anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
+        df_col = df_col[-anomaly_scores_norm.shape[0]:] 
+        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
+        compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
+    else:
+        X_collisions = dataset.preprocess_data(X_collisions, pipeline)
+        Dataloader_collisions = DataLoader(X_collisions, batch_size=args.infer_batch_size)
+        logging.info(f"Computing metrics on test set")  
+        
+        anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
+        df_col = df_col[-anomaly_scores_norm.shape[0]:] 
+        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
+        roc, _ = compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies)
+        plt.tile("Roc Curve")
+        plt.plot(roc[0], roc[1])
+        plt.show()
     
 if args.resume == True:
     logging.basicConfig(level=logging.INFO, format='%(message)s')

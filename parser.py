@@ -20,7 +20,9 @@ def parse_arguments():
                         choices=["cuda", "cpu"], help="_")
     parser.add_argument("--frequency", type=int, default=10, help="_")
     parser.add_argument("--train_split", type=int, default=0.9, help="_")
-    parser.add_argument("--test_split", type=int, default=0.8, help="_")
+    parser.add_argument("--test_split_value", type=int, default=0.8, help="_")
+    parser.add_argument("--test_split",  action='store_true',
+                        help="split test set in two subset")
     # Paths parameters
     parser.add_argument("--dataset_folder", type=str, default=None,
                         help="path of the folder with train/val/test sets")
