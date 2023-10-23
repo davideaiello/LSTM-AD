@@ -87,8 +87,8 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         max_index_f0_1 = f0_1.index(f0_1_max)
         th_f1_max = max_index_f1 * step
         th_f0_1_max = max_index_f0_1 * step
-        logging.info(f"{f1_max = } at {th_f1_max = }")
-        logging.info(f"{f0_1_max = } at {th_f0_1_max = }")  
+        logging.info(f"f1: {th_f1_max} at th: {th}")
+        logging.info(f"f0.1: {th_f0_1_max} at th: {th}")
         auc_roc = compute_auc_roc(fpr, sens)                # Area Under the Receiver Operating Characteristic
         auc_pr = compute_auc_pr(sens, prec)                 # Area Under the Precision-Recall Curve
         auc_ptrt = compute_auc_prrt(sens, prec, ths)        # Area Under the Precision-Recall-Threshold Curve
@@ -122,8 +122,8 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
 
         f1 = 2 * tp / (2 * tp + fp + fn)
         f0_1 = (1 + 0.1**2) * tp / ((1 + 0.1**2) * tp +  0.1**2*fp + fn)
-        logging.info(f"{f1 = } at {th = } for the test set")
-        logging.info(f"{f0_1 = } at {th = } for the test set")
+        logging.info(f"f1: {f1} at th: {th} for the test set")
+        logging.info(f"f0.1: {f0_1} at th: {th} for the test set")
     
 def plot_hist(anomaly_scores_norm, df_collision, df):
     logging.info(f"Counting the total number of anomalies...")
