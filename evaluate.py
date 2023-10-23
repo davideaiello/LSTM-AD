@@ -10,9 +10,27 @@ from torch.utils.data import DataLoader
 
 args = parser.parse_arguments()   
 
+def compute_auc_roc(fpr, tpr):
+    auc = 0
+    for i in range(1, len(fpr)):
+        auc += 0.5 * (tpr[i] + tpr[i-1]) * (fpr[i] - fpr[i-1])
+    return auc
+
+def compute_auc_pr(sens, prec):
+    auc = 0
+    for i in range(1, len(sens)):
+        auc += (sens[i] + sens[i-1]) * prec[i]
+    return auc
+
+def compute_auc_prrt(sens, prec, ths):
+    auc = 0
+    for i in range(1, len(sens)):
+        auc += 0.5 * (prec[i] + prec[i-1]) * (sens[i] + sens[i-1]) * (ths[i] + ths[i-1])
+    return auc
+
 def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, th=None):
     roc = list()
-    sens = list()           # sembra una lista di recall
+    sens = list()           # recalls o tpr
     spec = list()
     fpr = list()
     f1 = list()
@@ -22,8 +40,9 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
     anomlay_indexes_dict = dict()
     acc_with_err = list()
     step = 0.1
+    ths = np.arange(0, 1, step)
     if th is None:
-        for threshold in tqdm(np.arange(0, 1, step)):
+        for threshold in tqdm(ths):
             df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= threshold)]
             tp = 0                                                          # true positive per quella threshold
             anomaly_indexes = list()
@@ -60,7 +79,6 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
             acc_with_err.append( (np.mean(np.diag(cm_anomaly_norm)), np.std(np.diag(cm_anomaly_norm))) )
             anomlay_indexes_dict[threshold] = anomaly_indexes
         
-        roc = (fpr, sens)
         f1_max = max(f1)
         f0_1_max = max(f0_1)
         max_index_f1 = f1.index(f1_max)
@@ -69,7 +87,13 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         th_f0_1_max = max_index_f0_1 * step
         logging.info(f"{f1_max = } at {th_f1_max = }")
         logging.info(f"{f0_1_max = } at {th_f0_1_max = }")  
-        return roc, th_f0_1_max
+        auc_roc = compute_auc_roc(fpr, sens)                # Area Under the Receiver Operating Characteristic
+        auc_pr = compute_auc_pr(sens, prec)                 # Area Under the Precision-Recall Curve
+        auc_ptrt = compute_auc_prrt(sens, prec, ths)        # Area Under the Precision-Recall-Threshold Curve
+        logging.info(f"AUC-ROC: {auc_roc}")
+        logging.info(f"AUC-PR: {auc_pr}")
+        logging.info(f"AUC-PtRt: {auc_ptrt}")
+        return sens, fpr, th_f0_1_max
     else:
         df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= th)]
         tp = 0                                                          # true positive per quella threshold
@@ -138,13 +162,6 @@ def compute_anomaly_scores(model, dataloader):
     anomaly_scores_norm = (anomaly_scores - np.min(anomaly_scores)) / (np.max(anomaly_scores) - np.min(anomaly_scores))
     return anomaly_scores_norm
 
-def compute_auc_roc(roc):
-    fpr = roc[0]
-    tpr = roc[1]
-    auc = 0
-    for i in range(1, len(fpr)):
-        auc += 0.5 * (tpr[i] + tpr[i-1]) * (fpr[i] - fpr[i-1])
-    return auc
 
 def evaluation(model, pipeline):
     df_collision, X_collisions, df_test = dataset.read_folder_collisions(args.dataset_folder, args.frequency)
@@ -173,9 +190,9 @@ def evaluation(model, pipeline):
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
         df_col = df_col[-anomaly_scores_norm.shape[0]:] 
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
-        roc, _ = compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies)
+        fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies)
         plt.tile("Roc Curve")
-        plt.plot(roc[0], roc[1])
+        plt.plot(fpr, tpr)
         plt.show()
     
 if args.resume == True:
