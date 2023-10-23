@@ -7,8 +7,6 @@ import dataset
 from model import LSTMAD
 from tqdm import tqdm
 from dataset import return_dataloader
-from sklearn.metrics import roc_auc_score
-
 
 args = parser.parse_arguments()   
 
@@ -139,8 +137,6 @@ def plot_hist(anomaly_scores_norm, df_collision, df):
     logging.info(f"Anomalies detected: {tot_anomalies}")
     y_true = np.zeros_like(anomaly_scores_norm)
     y_true[index_anomaly] = 1
-    auc_roc = roc_auc_score(y_true, anomaly_scores_norm)
-    logging.info(f"AUC-ROC: {auc_roc}")
     anomaly_values = anomaly_scores_norm[index_anomaly]
     normal_values = np.delete(anomaly_scores_norm, index_anomaly)
 
