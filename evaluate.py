@@ -6,7 +6,8 @@ import logging
 import dataset
 from model import LSTMAD
 from tqdm import tqdm
-from torch.utils.data import DataLoader
+from dataset import return_dataloader
+
 
 args = parser.parse_arguments()   
 
@@ -179,8 +180,7 @@ def evaluation(model, pipeline):
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
         compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
     else:
-        print(X_collisions.shape)
-        Dataloader_collisions = DataLoader(X_collisions, batch_size=args.infer_batch_size)
+        Dataloader_collisions = return_dataloader(X_collisions)
         logging.info(f"Computing metrics on test set")  
         
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)

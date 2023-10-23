@@ -111,6 +111,10 @@ def split_data(ts, split=0.9, df_test=None):
     else:
         return DataLoader(train_ds, batch_size=args.batch_size), DataLoader(valid_ds, batch_size=args.infer_batch_size)
 
+def return_dataloader(ts):
+    ds = TimeSeries(ts, window_length=args.window_size, prediction_length=args.prediction_length)
+    return DataLoader(ds, batch_size=args.infer_batch_size)
+
 class TimeSeries(Dataset):
     def __init__(self, X, window_length, prediction_length):
         self.X = torch.from_numpy(X).float()
