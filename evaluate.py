@@ -173,20 +173,19 @@ def evaluation(model, pipeline):
         anomaly_scores_norm = compute_anomaly_scores(model, DataLoader_val)
         df_val = df_val[-anomaly_scores_norm.shape[0]:] 
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_val)
-        th = compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies)
-        logging.info(f"Computing metrics on test set")  
+        _, _, th = compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies)
         
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
         df_col = df_col[-anomaly_scores_norm.shape[0]:] 
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
+        logging.info(f"Computing metrics on test set") 
         compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
     else:
-        Dataloader_collisions = return_dataloader(X_collisions)
-        logging.info(f"Computing metrics on test set")  
-        
+        Dataloader_collisions = return_dataloader(X_collisions) 
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
         df_test = df_test[-anomaly_scores_norm.shape[0]:] 
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_test)
+        logging.info(f"Computing metrics on test set") 
         fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
         plt.tile("Roc Curve")
         plt.plot(fpr, tpr)
