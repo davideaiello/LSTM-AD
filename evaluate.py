@@ -126,11 +126,11 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         logging.info(f"{f0_1 = } at {th = } for the test set")
     
 def plot_hist(anomaly_scores_norm, df_collision, df):
-    logging.info(f"Counting the total number of anomalies")
+    logging.info(f"Counting the total number of anomalies...")
     tot_anomalies = 0
     index_anomaly = []
     idx = 0
-    for _, row in tqdm(df.iterrows()):
+    for _, row in df.iterrows():
         for _, collision_row in df_collision.iterrows():
             if (row['time'] >= collision_row['start']) and (row['time'] <= collision_row['end']):
                 tot_anomalies += 1
