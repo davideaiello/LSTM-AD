@@ -8,6 +8,9 @@ from model import LSTMAD
 from tqdm import tqdm
 from dataset import return_dataloader
 
+from sklearn import metrics
+from .pak import pak
+
 args = parser.parse_arguments()   
 
 def compute_auc_roc(fpr, tpr):
@@ -123,6 +126,66 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         logging.info(f"f1: {f1} at th: {th} for the test set")
         logging.info(f"f0.1: {f0_1} at th: {th} for the test set")
     
+def compute_metrics_pak(scores, targets, pa=True, interval=10, k=0):
+    """
+    :param scores: list or np.array or tensor, anomaly score
+    :param targets: list or np.array or tensor, target labels
+    :param pa: True/False
+    :param interval: threshold search interval
+    :param k: PA%K threshold
+    :return: results dictionary
+    """
+    assert len(scores) == len(targets)  # check if the length of scores and labels are equal
+
+    results = {}
+
+    try:
+        scores = np.asarray(scores)     # convert scores and targets in numpy arrays
+        targets = np.asarray(targets)
+    except TypeError:
+        scores = np.asarray(scores.cpu())
+        targets = np.asarray(targets.cpu())
+
+    precision, recall, threshold = metrics.precision_recall_curve(targets, scores)  # compute precision, recall and F1 score using the precision-recall curve
+    f1_score = 2 * precision * recall / (precision + recall + 1e-12)  # compute f1 score
+
+    # Compute metrics without Point-Adjustment
+    results['best_f1_wo_pa'] = np.max(f1_score)                     
+    results['best_precision_wo_pa'] = precision[np.argmax(f1_score)]
+    results['best_recall_wo_pa'] = recall[np.argmax(f1_score)]
+    results['prauc_wo_pa'] = metrics.average_precision_score(targets, scores)
+    results['auc_wo_pa'] = metrics.roc_auc_score(targets, scores)
+
+    # if PA is true compute metrics with point adjustment
+    if pa:
+        # find F1 score with optimal threshold of best_f1_wo_pa = best f1 without point_adjustment
+        pa_scores = pak(scores, targets, threshold[np.argmax(f1_score)], k)
+        results['raw_f1_w_pa'] = metrics.f1_score(targets, pa_scores)
+        results['raw_precision_w_pa'] = metrics.precision_score(targets, pa_scores)
+        results['raw_recall_w_pa'] = metrics.recall_score(targets, pa_scores)
+
+        # find best F1 score with varying thresholds
+        if len(scores) // interval < 1:   # check if the legnth of scores divided by interval is less than 1
+            ths = threshold   # use original threshold
+        else:
+            ths = [threshold[interval*i] for i in range(len(threshold)//interval)]  # create a list of ths containing thresholds at regular intervals determined by the interval parameter
+
+        # iterate through the thresholds and compute F1 scores with point adjustment for each threshold
+        pa_f1_scores = [metrics.f1_score(targets, pak(scores, targets, th, k)) for th in tqdm(ths)]
+        pa_f1_scores = np.asarray(pa_f1_scores)
+        results['best_f1_w_pa'] = np.max(pa_f1_scores)
+        results['best_f1_th_w_pa'] = ths[np.argmax(pa_f1_scores)]
+        
+        pa_scores = pak(scores, targets, ths[np.argmax(pa_f1_scores)], k)
+        results['best_precision_w_pa'] = metrics.precision_score(targets, pa_scores)
+        results['best_recall_w_pa'] = metrics.recall_score(targets, pa_scores)
+        results['pa_f1_scores'] = pa_f1_scores
+
+    return results
+
+
+
+
 def plot_hist(anomaly_scores_norm, df_collision, df, plot_filename):
     logging.info(f"Counting the total number of anomalies...")
     tot_anomalies = 0
@@ -150,7 +213,7 @@ def plot_hist(anomaly_scores_norm, df_collision, df, plot_filename):
     plot_filename = f"{plot_filename}.png"
     plt.savefig(plot_filename)
     plt.show()
-    return tot_anomalies
+    return tot_anomalies, y_true
 
 def compute_anomaly_scores(model, dataloader):
     errors = []
@@ -175,27 +238,30 @@ def evaluation(model, pipeline):
 
         anomaly_scores_norm = compute_anomaly_scores(model, DataLoader_val, 'plot_hist_val')
         df_val = df_val[-anomaly_scores_norm.shape[0]:] 
-        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_val)
+        tot_anomalies, y_true = plot_hist(anomaly_scores_norm, df_collision, df_val)
         _, _, th = compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies)
         
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions, 'plot_hist_test')
         df_col = df_col[-anomaly_scores_norm.shape[0]:] 
-        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
+        tot_anomalies, y_true = plot_hist(anomaly_scores_norm, df_collision, df_col)
         logging.info(f"Computing metrics on test set") 
         compute_metrics(anomaly_scores_norm, df_col, df_collision, tot_anomalies, th)
     else:
         Dataloader_collisions = return_dataloader(X_collisions) 
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
         df_test = df_test[-anomaly_scores_norm.shape[0]:] 
-        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_test, 'plot_hist_test')
+        tot_anomalies, y_true = plot_hist(anomaly_scores_norm, df_collision, df_test, 'plot_hist_test')
         logging.info(f"Computing metrics on test set") 
-        fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
-        plt.title("Roc Curve")
-        plt.plot(fpr, tpr, color="r")
-        plt.xlabel('FPR')
-        plt.ylabel('TPR')
-        plt.savefig("Roc Curve.png")
-        plt.show()
+        metrics = compute_metrics_pak(anomaly_scores_norm, y_true, pa=True, interval=10, k=0)
+        logging.info(metrics) 
+
+        # fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
+        # plt.title("Roc Curve")
+        # plt.plot(fpr, tpr, color="r")
+        # plt.xlabel('FPR')
+        # plt.ylabel('TPR')
+        # plt.savefig("Roc Curve.png")
+        # plt.show()
     
 if args.resume == True:
     logging.basicConfig(level=logging.INFO, format='%(message)s')
