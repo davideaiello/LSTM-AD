@@ -9,7 +9,7 @@ from tqdm import tqdm
 from dataset import return_dataloader
 
 from sklearn import metrics
-from .pak import pak
+# from .pak import pak
 
 args = parser.parse_arguments()   
 
@@ -125,7 +125,9 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         f0_1 = (1 + 0.1**2) * tp / ((1 + 0.1**2) * tp +  0.1**2*fp + fn)
         logging.info(f"f1: {f1} at th: {th} for the test set")
         logging.info(f"f0.1: {f0_1} at th: {th} for the test set")
-    
+
+
+
 def compute_metrics_pak(scores, targets, pa=True, interval=10, k=0):
     """
     :param scores: list or np.array or tensor, anomaly score
@@ -183,7 +185,37 @@ def compute_metrics_pak(scores, targets, pa=True, interval=10, k=0):
 
     return results
 
+def pak(scores, targets, thres, k=20):
+    """
 
+    :param scores: anomaly scores
+    :param targets: target labels
+    :param thres: anomaly threshold
+    :param k: PA%K ratio, 0 equals to conventional point adjust and 100 equals to original predictions
+    :return: point_adjusted predictions
+    """
+    scores = np.array(scores)     # convert anomaly scores and threholsd to in numpy array
+    thres = np.array(thres)
+
+    predicts = scores > thres     # each element is true if the score is greater than the threshold
+    actuals = targets > 0.01      # each elment is true if the corrisponding target label is greather than 0.01
+
+    one_start_idx = np.where(np.diff(actuals, prepend=0) == 1)[0]   # dentify the starting indices of consecutive sequences of 1s (one_start_idx) and 0s (zero_start_idx) in the actuals array.
+    zero_start_idx = np.where(np.diff(actuals, prepend=0) == -1)[0]
+
+    # If the length of one_start_idx is equal to the length of zero_start_idx + 1, adjust zero_start_idx by appending the length of predicts.
+    assert len(one_start_idx) == len(zero_start_idx) + 1 or len(one_start_idx) == len(zero_start_idx)
+
+    if len(one_start_idx) == len(zero_start_idx) + 1:
+        zero_start_idx = np.append(zero_start_idx, len(predicts))
+
+    # Iterate through each sequence of 1s and 0s, and if the sum of predicted anomalies
+    # in that sequence exceeds the PA%K ratio, set all elements in that sequence to 1.
+    for i in range(len(one_start_idx)):
+        if predicts[one_start_idx[i]:zero_start_idx[i]].sum() > k / 100 * (zero_start_idx[i] - one_start_idx[i]):
+            predicts[one_start_idx[i]:zero_start_idx[i]] = 1
+
+    return predicts
 
 
 def plot_hist(anomaly_scores_norm, df_collision, df, plot_filename):
