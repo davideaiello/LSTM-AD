@@ -85,8 +85,8 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         max_index_f0_1 = f0_1.index(f0_1_max)
         th_f1_max = max_index_f1 * step
         th_f0_1_max = max_index_f0_1 * step
-        logging.info(f"f1: {th_f1_max} at th: {th}")
-        logging.info(f"f0.1: {th_f0_1_max} at th: {th}")
+        logging.info(f"f1: {f1_max} at th: {th_f1_max}")
+        logging.info(f"f0.1: {f0_1_max} at th: {th_f0_1_max}")
         auc_roc = compute_auc_roc(fpr, sens)                # Area Under the Receiver Operating Characteristic
         auc_pr = compute_auc_pr(sens, prec)                 # Area Under the Precision-Recall Curve
         auc_ptrt = compute_auc_prrt(sens, prec, ths)        # Area Under the Precision-Recall-Threshold Curve
@@ -123,7 +123,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         logging.info(f"f1: {f1} at th: {th} for the test set")
         logging.info(f"f0.1: {f0_1} at th: {th} for the test set")
     
-def plot_hist(anomaly_scores_norm, df_collision, df):
+def plot_hist(anomaly_scores_norm, df_collision, df, plot_filename):
     logging.info(f"Counting the total number of anomalies...")
     tot_anomalies = 0
     index_anomaly = []
@@ -148,6 +148,8 @@ def plot_hist(anomaly_scores_norm, df_collision, df):
     plt.legend(loc='upper right')
     plt.title('Distribution')
     plt.show()
+    plot_filename = f"{plot_filename}.png"
+    plt.savefig(plot_filename)
     return tot_anomalies
 
 def compute_anomaly_scores(model, dataloader):
@@ -171,12 +173,12 @@ def evaluation(model, pipeline):
         logging.info(f"Computing threshold on a test set subset")   
         model.eval()
 
-        anomaly_scores_norm = compute_anomaly_scores(model, DataLoader_val)
+        anomaly_scores_norm = compute_anomaly_scores(model, DataLoader_val, 'plot_hist_val')
         df_val = df_val[-anomaly_scores_norm.shape[0]:] 
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_val)
         _, _, th = compute_metrics(anomaly_scores_norm, df_val, df_collision, tot_anomalies)
         
-        anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
+        anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions, 'plot_hist_test')
         df_col = df_col[-anomaly_scores_norm.shape[0]:] 
         tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_col)
         logging.info(f"Computing metrics on test set") 
@@ -185,11 +187,12 @@ def evaluation(model, pipeline):
         Dataloader_collisions = return_dataloader(X_collisions) 
         anomaly_scores_norm = compute_anomaly_scores(model, Dataloader_collisions)
         df_test = df_test[-anomaly_scores_norm.shape[0]:] 
-        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_test)
+        tot_anomalies = plot_hist(anomaly_scores_norm, df_collision, df_test, 'plot_hist_test')
         logging.info(f"Computing metrics on test set") 
         fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
         plt.title("Roc Curve")
         plt.plot(fpr, tpr)
+        plt.savefig("Roc Curve.png")
         plt.show()
     
 if args.resume == True:
