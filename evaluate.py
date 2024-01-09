@@ -7,7 +7,6 @@ import dataset
 from model import LSTMAD
 from tqdm import tqdm
 from dataset import return_dataloader
-
 from sklearn import metrics
 # from .pak import pak
 
@@ -46,7 +45,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
     ths = np.arange(0, 1, step)
     if th is None:
         for threshold in tqdm(ths):
-            df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= threshold)]
+            df_anomaly = df_test.loc[np.array(anomaly_scores_norm > threshold)]
             tp = 0                                                          # true positive per quella threshold
             anomaly_indexes = list()
             for index, row in df_anomaly.iterrows():
@@ -98,7 +97,7 @@ def compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies, t
         logging.info(f"AUC-PtRt: {auc_ptrt}")
         return sens, fpr, th_f0_1_max
     else:
-        df_anomaly = df_test.loc[np.array(anomaly_scores_norm <= th)]
+        df_anomaly = df_test.loc[np.array(anomaly_scores_norm > th)]
         tp = 0                                                          # true positive per quella threshold
         anomaly_indexes = list()
         for index, row in df_anomaly.iterrows():
@@ -285,15 +284,14 @@ def evaluation(model, pipeline):
         tot_anomalies, y_true = plot_hist(anomaly_scores_norm, df_collision, df_test, 'plot_hist_test')
         logging.info(f"Computing metrics on test set") 
         metrics = compute_metrics_pak(anomaly_scores_norm, y_true, pa=True, interval=10, k=0)
-        logging.info(metrics) 
-
-        # fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
-        # plt.title("Roc Curve")
-        # plt.plot(fpr, tpr, color="r")
-        # plt.xlabel('FPR')
-        # plt.ylabel('TPR')
-        # plt.savefig("Roc Curve.png")
-        # plt.show()
+        logging.info(f"compute pak metrics = {metrics}") 
+        fpr, tpr, _ = compute_metrics(anomaly_scores_norm, df_test, df_collision, tot_anomalies)
+        plt.title("Roc Curve")
+        plt.plot(fpr, tpr, color="r")
+        plt.xlabel('FPR')
+        plt.ylabel('TPR')
+        plt.savefig("Roc Curve.png")
+        plt.show()
     
 if args.resume == True:
     logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -312,8 +310,4 @@ if args.resume == True:
         model = model.to('cuda')
 
     evaluation(model, pipeline)
-
-
-
-
 
